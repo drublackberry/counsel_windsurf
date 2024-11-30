@@ -1,0 +1,53 @@
+# Database
+app.db
+*.db
+*.sqlite3
+instance/app.db
+instance/*.db
+instance/*.sqlite3
+
+# Environment variables
+.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+.env/
+.venv/
+
+# Flask
+instance/
+.webassets-cache
+
+# Logs
+*.log
+logs/
+app.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+coverage.xml
+*.cover

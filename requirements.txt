@@ -1,0 +1,14 @@
+Flask==2.0.3
+SQLAlchemy==1.4.46
+Flask-SQLAlchemy==2.5.1
+Flask-Login==0.5.0
+Flask-WTF==1.0.1
+Flask-Migrate==3.1.0
+python-dotenv==1.0.0
+Werkzeug==2.0.3
+email-validator==2.0.0
+groq==0.4.2
+groq-cli
+httpx>=0.24.1
+numpy==1.24.3
+setuptools
