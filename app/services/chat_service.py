@@ -99,6 +99,16 @@ class ChatService:
                     response_data = response.json()
                     assistant_message = response_data['choices'][0]['message']['content']
                     
+                    # Format the full conversation including the latest exchange
+                    updated_messages = conversation_history + [
+                        {"role": "user", "content": user_input},
+                        {"role": "assistant", "content": assistant_message}
+                    ]
+                    full_conversation = "\n\n".join([
+                        f"{'You' if msg['role'] == 'user' else 'AI Counselor'}: {msg['content']}"
+                        for msg in updated_messages
+                    ])
+                    
                     # Log the full response
                     logger.info("=== AI Response ===")
                     logger.info(f"Raw response: {assistant_message}")
@@ -116,7 +126,7 @@ class ChatService:
                         logger.info(f"Processed summary: {processed_message}")
                         logger.info(f"Short summary: {short_summary}")
                     
-                    return processed_message, is_complete, assistant_message, short_summary
+                    return processed_message, is_complete, full_conversation, short_summary
                 else:
                     error_body = response.text
                     logger.error(f"Error response from Groq API (Status {response.status_code}): {error_body}")
