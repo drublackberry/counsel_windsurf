@@ -48,24 +48,18 @@ def create_direction():
             session['conversation_history'] = json.dumps(messages)
             
             if is_complete:
-                # Create direction with the summary (response is already cleaned in chat service)
-                direction = Direction(
-                    title=f"Growth Direction: {response[:50]}...",
-                    description=response,
-                    author=current_user,
-                    raw_response=full_response
-                )
-                
-                logger.info(f"Creating direction with title: {direction.title}")
-                db.session.add(direction)
-                db.session.commit()
-                logger.info(f"Direction saved to database with id: {direction.id}")
-                
-                # Clear conversation history
-                session.pop('conversation_history', None)
-                
-                flash('Your growth direction has been recorded!')
-                return redirect(url_for('main.index'))
+                # Store the direction data in session for confirmation
+                session['pending_direction'] = {
+                    'summary': response,
+                    'raw_response': full_response
+                }
+                return render_template('chat_direction.html',
+                                    title='New Growth Direction',
+                                    form=form,
+                                    conversation_history=messages,
+                                    is_complete=True,
+                                    direction_summary=response,
+                                    raw_response=full_response)
             
             # Continue conversation
             return redirect(url_for('main.create_direction'))
@@ -78,6 +72,16 @@ def create_direction():
     # Load conversation history for template
     try:
         messages = json.loads(conversation_history)
+        # Check if there's a pending direction to confirm
+        pending = session.get('pending_direction')
+        if pending:
+            return render_template('chat_direction.html',
+                                title='New Growth Direction',
+                                form=form,
+                                conversation_history=messages,
+                                is_complete=True,
+                                direction_summary=pending['summary'],
+                                raw_response=pending['raw_response'])
     except (json.JSONDecodeError, TypeError):
         logger.error("Invalid conversation history in session, resetting")
         messages = []
@@ -87,6 +91,42 @@ def create_direction():
                          title='New Growth Direction',
                          form=form,
                          conversation_history=messages)
+
+@bp.route('/confirm_direction', methods=['POST'])
+@login_required
+def confirm_direction():
+    try:
+        summary = request.form.get('summary')
+        raw_response = request.form.get('raw_response')
+        
+        if not summary:
+            flash('No direction summary provided.', 'error')
+            return redirect(url_for('main.create_direction'))
+            
+        # Create new direction
+        direction = Direction(
+            title=f"Growth Direction: {summary[:50]}...",
+            description=summary,
+            author=current_user,
+            raw_response=raw_response
+        )
+        
+        logger.info(f"Creating confirmed direction with title: {direction.title}")
+        db.session.add(direction)
+        db.session.commit()
+        logger.info(f"Direction saved to database with id: {direction.id}")
+        
+        # Clear conversation history and pending direction
+        session.pop('conversation_history', None)
+        session.pop('pending_direction', None)
+        
+        flash('Your growth direction has been recorded!')
+        return redirect(url_for('main.index'))
+        
+    except Exception as e:
+        logger.error(f"Error confirming direction: {str(e)}", exc_info=True)
+        flash('Error saving direction. Please try again.', 'error')
+        return redirect(url_for('main.create_direction'))
 
 @bp.route('/direction/<int:id>')
 @login_required

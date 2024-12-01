@@ -4,7 +4,7 @@
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-12">
-            <h1>Growth Direction Chat</h1>
+            <h1>{{ title }}</h1>
             
             <!-- Reset Button -->
             <form action="{{ url_for('main.reset_conversation') }}" method="post" class="mb-3">
@@ -13,10 +13,6 @@
             
             <!-- Conversation History -->
             <div class="chat-history mb-4">
-                <div class="message system-message mb-2 p-3">
-                    <strong>System:</strong>
-                    <p class="mb-0">How do you want to grow?</p>
-                </div>
                 {% for message in conversation_history %}
                     <div class="message {% if message.role == 'user' %}user-message{% else %}assistant-message{% endif %} mb-2 p-3">
                         <strong>{% if message.role == 'user' %}You{% else %}AI Counselor{% endif %}:</strong>
@@ -24,6 +20,39 @@
                     </div>
                 {% endfor %}
             </div>
+            
+            <!-- Direction Confirmation Modal -->
+            {% if is_complete %}
+            <div class="modal fade" id="confirmDirectionModal" tabindex="-1" aria-labelledby="confirmDirectionModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="confirmDirectionModalLabel">Confirm Your Growth Direction</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>The AI has summarized your growth direction. Please review it:</p>
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">Summary</h6>
+                                    <p class="card-text">{{ direction_summary }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <form action="{{ url_for('main.reset_conversation') }}" method="post" class="me-2">
+                                <button type="submit" class="btn btn-secondary">Start Over</button>
+                            </form>
+                            <form action="{{ url_for('main.confirm_direction') }}" method="post">
+                                <input type="hidden" name="summary" value="{{ direction_summary }}">
+                                <input type="hidden" name="raw_response" value="{{ raw_response }}">
+                                <button type="submit" class="btn btn-primary">Save Direction</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
             
             <!-- Chat Form -->
             <form method="post" id="chat-form">
@@ -60,11 +89,16 @@
 .assistant-message {
     background-color: #f5f5f5;
 }
-.system-message {
-    background-color: #e9ecef;
-    text-align: center;
-}
 </style>
+
+{% if is_complete %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var modal = new bootstrap.Modal(document.getElementById('confirmDirectionModal'));
+    modal.show();
+});
+</script>
+{% endif %}
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
