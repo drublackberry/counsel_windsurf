@@ -41,7 +41,7 @@ def create_direction():
             messages.append({"role": "user", "content": user_message})
             
             # Get AI response
-            response, is_complete, full_response = chat_service.chat(user_message, messages)
+            response, is_complete, full_response, short_summary = chat_service.chat(user_message, messages)
             
             # Add AI response to history
             messages.append({"role": "assistant", "content": response})
@@ -51,7 +51,8 @@ def create_direction():
                 # Store the direction data in session for confirmation
                 session['pending_direction'] = {
                     'summary': response,
-                    'raw_response': full_response
+                    'raw_response': full_response,
+                    'short_summary': short_summary
                 }
                 return render_template('chat_direction.html',
                                     title='New Growth Direction',
@@ -59,7 +60,8 @@ def create_direction():
                                     conversation_history=messages,
                                     is_complete=True,
                                     direction_summary=response,
-                                    raw_response=full_response)
+                                    raw_response=full_response,
+                                    short_summary=short_summary)
             
             # Continue conversation
             return redirect(url_for('main.create_direction'))
@@ -81,7 +83,8 @@ def create_direction():
                                 conversation_history=messages,
                                 is_complete=True,
                                 direction_summary=pending['summary'],
-                                raw_response=pending['raw_response'])
+                                raw_response=pending['raw_response'],
+                                short_summary=pending['short_summary'])
     except (json.JSONDecodeError, TypeError):
         logger.error("Invalid conversation history in session, resetting")
         messages = []
@@ -95,39 +98,30 @@ def create_direction():
 @bp.route('/confirm_direction', methods=['POST'])
 @login_required
 def confirm_direction():
-    try:
-        summary = request.form.get('summary')
-        raw_response = request.form.get('raw_response')
-        
-        if not summary:
-            flash('No direction summary provided.', 'error')
-            return redirect(url_for('main.create_direction'))
-            
-        # Create new direction
-        direction = Direction(
-            title=f"Growth Direction: {summary[:50]}...",
-            description=summary,
-            author=current_user,
-            raw_response=raw_response
-        )
-        
-        logger.info(f"Creating confirmed direction with title: {direction.title}")
-        db.session.add(direction)
-        db.session.commit()
-        logger.info(f"Direction saved to database with id: {direction.id}")
-        
-        # Clear conversation history and pending direction
-        session.pop('conversation_history', None)
-        session.pop('pending_direction', None)
-        
-        flash('Your growth direction has been recorded!')
-        return redirect(url_for('main.index'))
-        
-    except Exception as e:
-        logger.error(f"Error confirming direction: {str(e)}", exc_info=True)
-        flash('Error saving direction. Please try again.', 'error')
+    if 'pending_direction' not in session:
+        flash('No pending direction to confirm.')
         return redirect(url_for('main.create_direction'))
-
+    
+    pending = session['pending_direction']
+    direction = Direction(
+        title=pending.get('short_summary', 'Growth Direction'),
+        description=pending['summary'],
+        raw_response=pending['raw_response'],
+        author=current_user
+    )
+        
+    logger.info(f"Creating confirmed direction with title: {direction.title}")
+    db.session.add(direction)
+    db.session.commit()
+    logger.info(f"Direction saved to database with id: {direction.id}")
+        
+    # Clear conversation history and pending direction
+    session.pop('conversation_history', None)
+    session.pop('pending_direction', None)
+        
+    flash('Your growth direction has been recorded!')
+    return redirect(url_for('main.index'))
+        
 @bp.route('/direction/<int:id>')
 @login_required
 def direction(id):

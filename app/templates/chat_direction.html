@@ -4,7 +4,7 @@
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-12">
-            <h1>{{ title }}</h1>
+            <h1>Enter New Growth Direction</h1>
             
             <!-- Reset Button -->
             <form action="{{ url_for('main.reset_conversation') }}" method="post" class="mb-3">
@@ -34,7 +34,7 @@
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="confirmDirectionModalLabel">Confirm Your Growth Direction</h5>
+                            <h5 class="modal-title" id="confirmDirectionModalLabel">Enter New Growth Direction</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
@@ -47,9 +47,7 @@
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <form action="{{ url_for('main.reset_conversation') }}" method="post" class="me-2">
-                                <button type="submit" class="btn btn-secondary">Start Over</button>
-                            </form>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Continue Chat</button>
                             <form action="{{ url_for('main.confirm_direction') }}" method="post">
                                 <input type="hidden" name="summary" value="{{ direction_summary }}">
                                 <input type="hidden" name="raw_response" value="{{ raw_response }}">
