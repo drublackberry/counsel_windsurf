@@ -13,6 +13,13 @@
             
             <!-- Conversation History -->
             <div class="chat-history mb-4">
+                {% if not conversation_history %}
+                    <div class="message assistant-message mb-2 p-3">
+                        <strong>AI Counselor:</strong>
+                        <p class="mb-0">Hi! How would you like to grow? I'm here to help you explore and articulate your growth direction.</p>
+                    </div>
+                {% endif %}
+                
                 {% for message in conversation_history %}
                     <div class="message {% if message.role == 'user' %}user-message{% else %}assistant-message{% endif %} mb-2 p-3">
                         <strong>{% if message.role == 'user' %}You{% else %}AI Counselor{% endif %}:</strong>
@@ -58,7 +65,7 @@
             <form method="post" id="chat-form">
                 {{ form.hidden_tag() }}
                 <div class="form-group">
-                    {{ form.message(class="form-control", rows=3, placeholder="Type your message here...") }}
+                    {{ form.message(class="form-control", rows=3, placeholder="Share your thoughts about how you'd like to grow...") }}
                     {% for error in form.message.errors %}
                         <span class="text-danger">{{ error }}</span>
                     {% endfor %}
