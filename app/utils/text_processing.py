@@ -1,28 +1,28 @@
-import re
 import logging
 
-logger = logging.getLogger('counsel_windsurf.utils.text_processing')
+logger = logging.getLogger('counsel_windsurf.text_processing')
 
-def is_direction_complete(message: str) -> tuple[bool, str]:
-    """
-    Check if a message indicates direction completion, handling various formats.
+def is_direction_complete(text: str, completion_token='[DIRCOMP]') -> tuple[bool, str]:
+    """Check if the direction is complete and extract the summary.
     
     Args:
-        message: The message to check
+        text (str): The text to check for completion token and extract summary from
         
     Returns:
-        tuple[bool, str]: (is_complete, cleaned_message)
-            - is_complete: True if the message indicates completion
-            - cleaned_message: The cleaned message with standardized format
+        tuple[bool, str]: A tuple containing:
+            - bool: True if the direction is complete, False otherwise
+            - str: The cleaned summary text if complete, original text if not
     """
-    # Look for [DIRECTIONCOMPLETE] token
-    if '[DIRECTIONCOMPLETE]' in message.upper():
-        # Extract everything after the completion marker
-        full_text = message.strip()
-        marker_pos = full_text.upper().find('[DIRECTIONCOMPLETE]')
-        summary = full_text[marker_pos + 18:].strip()  # 18 is length of [DIRECTIONCOMPLETE]
-        logger.debug(f"Found direction completion, summary: {summary}")
-        return True, summary
-    
-    logger.debug("No direction completion found")
-    return False, message
+  
+    try:
+        if completion_token in text:
+            # Split on token and take everything after it
+            summary = text.split(completion_token)[1].strip()
+            logger.info(f"Direction complete, extracted summary: {summary[:100]}...")
+            return True, summary
+            
+        return False, text
+        
+    except Exception as e:
+        logger.error(f"Error processing direction text: {str(e)}")
+        return False, text
