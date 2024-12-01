@@ -1,5 +1,11 @@
 import os
 import sys
+from dotenv import load_dotenv
+
+# Get absolute path to .env file
+env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+load_dotenv(dotenv_path=env_path, override=True)
+
 from app import create_app, db
 import logging
 

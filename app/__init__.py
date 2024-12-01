@@ -5,6 +5,11 @@ from flask_migrate import Migrate
 from config import Config
 import logging
 import sys
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
 
 db = SQLAlchemy()
 login_manager = LoginManager()

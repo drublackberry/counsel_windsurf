@@ -20,88 +20,70 @@ class EmbeddingService:
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
-        logger.debug(f"Groq API configuration initialized successfully with model: {self.model}")
-
+        
     def create_embedding(self, text):
-        """Create embedding for the given text using Groq's API"""
+        """Create an embedding for the given text using Groq API."""
         try:
             logger.debug(f"Creating embedding for text: {text[:100]}...")
             
-            # Construct a prompt that asks for a structured semantic analysis
-            prompt = (
-                "Analyze the following text and provide a structured semantic representation. "
-                "Include key concepts, relationships, and important context. "
-                "Format your response as a list of key points and their relationships."
+            # Prepare the message for embedding generation
+            messages = [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": text}
+            ]
+            
+            # Make request to Groq API
+            response = httpx.post(
+                self.base_url,
+                headers=self.headers,
+                json={
+                    "model": self.model,
+                    "messages": messages
+                }
             )
-            
-            payload = {
-                "messages": [{
-                    "role": "system",
-                    "content": "You are a semantic analysis assistant that helps create structured representations of text."
-                }, {
-                    "role": "user",
-                    "content": f"{prompt}\n\nText to analyze: {text}"
-                }],
-                "model": self.model,
-                "temperature": 0.0,
-                "max_tokens": 1000,
-                "top_p": 1,
-                "frequency_penalty": 0,
-                "presence_penalty": 0
-            }
-            
-            with httpx.Client(timeout=60.0) as client:
-                logger.debug(f"Sending request to Groq API with model: {self.model}")
-                response = client.post(
-                    self.base_url,
-                    headers=self.headers,
-                    json=payload
-                )
-                response.raise_for_status()
-                data = response.json()
-            
-            # Extract the content from the response
-            embedding_text = data['choices'][0]['message']['content']
-            logger.debug(f"Received response: {embedding_text[:100]}...")
-            
-            # Convert the text to a numerical embedding using a more sophisticated approach
-            # Split into sentences and words for better semantic representation
-            sentences = embedding_text.lower().split('.')
-            embedding = np.zeros(768)  # Using a 768-dimensional embedding space
-            
-            for sentence in sentences:
-                words = sentence.strip().split()
-                for i, word in enumerate(words):
-                    # Use position-aware hashing to capture word order
-                    hash_val = hash(f"{word}_{i}")
-                    embedding[hash_val % 768] += 1.0 / (i + 1)  # Weight by position
-            
-            # Normalize the embedding
-            norm = np.linalg.norm(embedding)
-            if norm > 0:
-                embedding = embedding / norm
-            
-            logger.info("Embedding created successfully")
-            return embedding, embedding_text
-            
+                
+            if response.status_code == 200:
+                response_data = response.json()
+                    
+                # Extract the assistant's response
+                assistant_message = response_data['choices'][0]['message']['content']
+                    
+                # Convert the response to a numpy array (simple approach)
+                # Using the hash of the response as a basic numerical representation
+                embedding = np.array([hash(word) for word in assistant_message.split()])
+                    
+                logger.info("Successfully created embedding")
+                return embedding, response_data
+            else:
+                logger.error(f"Error from Groq API: {response.text}")
+                return None, None
+                    
         except Exception as e:
             logger.error(f"Error creating embedding: {str(e)}")
             return None, None
 
     def compute_similarity(self, embedding1, embedding2):
-        """Compute cosine similarity between two embeddings"""
-        if embedding1 is None or embedding2 is None:
-            logger.warning("One or both embeddings are None")
-            return 0.0
+        """Compute cosine similarity between two embeddings."""
         try:
+            if embedding1 is None or embedding2 is None:
+                return 0.0
+                
+            # Ensure both embeddings have the same length
+            min_length = min(len(embedding1), len(embedding2))
+            embedding1 = embedding1[:min_length]
+            embedding2 = embedding2[:min_length]
+            
+            # Compute cosine similarity
+            dot_product = np.dot(embedding1, embedding2)
             norm1 = np.linalg.norm(embedding1)
             norm2 = np.linalg.norm(embedding2)
+            
             if norm1 == 0 or norm2 == 0:
-                logger.warning("One or both embedding norms are zero")
                 return 0.0
-            similarity = np.dot(embedding1, embedding2) / (norm1 * norm2)
-            logger.debug(f"Computed similarity: {similarity}")
-            return similarity
+                
+            similarity = dot_product / (norm1 * norm2)
+            return float(similarity)
+            
         except Exception as e:
             logger.error(f"Error computing similarity: {str(e)}")
             return 0.0

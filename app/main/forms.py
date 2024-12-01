@@ -11,3 +11,7 @@ class EditDirectionForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired()])
     description = TextAreaField('Description', validators=[DataRequired()])
     submit = SubmitField('Save Changes')
+
+class ChatMessageForm(FlaskForm):
+    message = TextAreaField('How do you want to grow?', validators=[DataRequired()])
+    submit = SubmitField('Send')
