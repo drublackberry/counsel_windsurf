@@ -1,70 +1,75 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-12 mb-4">
-            <div class="d-flex justify-content-between align-items-center">
-                <h1>Learn, fail and grow, never give up.</h1>
-                {% if current_user.is_authenticated %}
-                <div class="d-flex gap-2">
-                    <a href="{{ url_for('main.create_direction') }}" class="btn btn-primary">New Growth Direction</a>
-                    <a href="{{ url_for('main.create_reference') }}" class="btn btn-success">New Reference</a>
-                </div>
-                {% endif %}
-            </div>
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-4">Welcome to Campfire</h1>
+            <p class="lead">A space for personal growth and inspiration</p>
         </div>
     </div>
 
     {% if current_user.is_authenticated %}
     <div class="row">
-        <!-- Growth Directions -->
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="h4 mb-0">Your Growth Directions</h2>
-                </div>
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
                 <div class="card-body">
-                    {% if current_user.directions.count() > 0 %}
+                    <h2>Growth Directions</h2>
+                    <p class="text-muted">Your personal growth journey</p>
+                    <a href="{{ url_for('main.create_direction') }}" class="btn btn-primary mb-3">New Direction</a>
+                    
+                    {% if current_user.directions %}
                         <div class="list-group">
-                            {% for direction in current_user.directions %}
-                            <a href="{{ url_for('main.direction', id=direction.id) }}" class="list-group-item list-group-item-action">
-                                <div class="d-flex w-100 justify-content-between">
+                        {% for direction in current_user.directions %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between align-items-center" role="button" data-bs-toggle="collapse" data-bs-target="#direction{{ direction.id }}" aria-expanded="false">
                                     <h5 class="mb-1">{{ direction.title }}</h5>
-                                    <small class="text-muted">{{ direction.timestamp.strftime('%Y-%m-%d') }}</small>
+                                    <div>
+                                        <small class="text-muted me-2">{{ direction.timestamp.strftime('%Y-%m-%d') }}</small>
+                                        <i class="fas fa-chevron-down"></i>
+                                    </div>
                                 </div>
-                                <p class="mb-1">{{ direction.description[:100] }}...</p>
-                            </a>
-                            {% endfor %}
+                                <div class="collapse mt-2" id="direction{{ direction.id }}">
+                                    <p class="mb-1">{{ direction.description }}</p>
+                                    <a href="{{ url_for('main.direction', id=direction.id) }}" class="btn btn-sm btn-outline-primary mt-2">View Details</a>
+                                </div>
+                            </div>
+                        {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-muted">No growth directions yet. Click "New Growth Direction" to start your journey!</p>
+                        <p class="text-muted">No growth directions yet. Start by creating one!</p>
                     {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- References -->
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="h4 mb-0">Your References</h2>
-                </div>
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
                 <div class="card-body">
-                    {% if current_user.references.count() > 0 %}
+                    <h2>References</h2>
+                    <p class="text-muted">People and ideas that inspire you</p>
+                    <a href="{{ url_for('main.create_reference') }}" class="btn btn-primary mb-3">New Reference</a>
+
+                    {% if current_user.references %}
                         <div class="list-group">
-                            {% for reference in current_user.references %}
-                            <a href="{{ url_for('main.reference', id=reference.id) }}" class="list-group-item list-group-item-action">
-                                <div class="d-flex w-100 justify-content-between">
+                        {% for reference in current_user.references %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between align-items-center" role="button" data-bs-toggle="collapse" data-bs-target="#reference{{ reference.id }}" aria-expanded="false">
                                     <h5 class="mb-1">{{ reference.title }}</h5>
-                                    <small class="text-muted">{{ reference.timestamp.strftime('%Y-%m-%d') }}</small>
+                                    <div>
+                                        <small class="text-muted me-2">{{ reference.timestamp.strftime('%Y-%m-%d') }}</small>
+                                        <i class="fas fa-chevron-down"></i>
+                                    </div>
                                 </div>
-                                <p class="mb-1">{{ reference.description[:100] }}...</p>
-                            </a>
-                            {% endfor %}
+                                <div class="collapse mt-2" id="reference{{ reference.id }}">
+                                    <p class="mb-1">{{ reference.description }}</p>
+                                    <a href="{{ url_for('main.reference', id=reference.id) }}" class="btn btn-sm btn-outline-primary mt-2">View Details</a>
+                                </div>
+                            </div>
+                        {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-muted">No references yet. Click "New Reference" to add someone who inspires you!</p>
+                        <p class="text-muted">No references yet. Start by adding one!</p>
                     {% endif %}
                 </div>
             </div>
@@ -74,7 +79,7 @@
     <div class="row">
         <div class="col-md-12">
             <div class="jumbotron">
-                <h2>Welcome to Growth Direction Counseling!</h2>
+                <h2>Welcome to Campfire!</h2>
                 <p class="lead">This is a place where you can explore your personal growth journey and keep track of people who inspire you.</p>
                 <hr class="my-4">
                 <p>Please log in to start your journey.</p>
@@ -86,23 +91,24 @@
 </div>
 
 <style>
+[data-bs-toggle="collapse"] {
+    cursor: pointer;
+}
+
+[data-bs-toggle="collapse"] .fas {
+    transition: transform 0.2s ease;
+}
+
+[data-bs-toggle="collapse"][aria-expanded="true"] .fas {
+    transform: rotate(180deg);
+}
+
 .list-group-item {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: background-color 0.2s ease;
 }
 
 .list-group-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.card {
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.card-header {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    background-color: rgba(0, 0, 0, 0.02);
 }
 </style>
 {% endblock %}
