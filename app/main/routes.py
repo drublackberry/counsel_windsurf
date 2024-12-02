@@ -132,17 +132,23 @@ def direction(id):
         return redirect(url_for('main.index'))
     return render_template('direction.html', title='View Direction', direction=direction)
 
-@bp.route('/delete_direction/<int:id>')
+@bp.route('/delete_direction/<int:id>', methods=['POST'])
 @login_required
 def delete_direction(id):
     direction = Direction.query.get_or_404(id)
     if direction.author != current_user:
-        flash('You do not have permission to delete this direction.')
+        flash('You cannot delete this direction.', 'error')
         return redirect(url_for('main.index'))
     
-    db.session.delete(direction)
-    db.session.commit()
-    flash('Direction deleted.')
+    try:
+        db.session.delete(direction)
+        db.session.commit()
+        flash('Direction deleted successfully.', 'success')
+    except Exception as e:
+        logger.error(f"Error deleting direction: {str(e)}", exc_info=True)
+        db.session.rollback()
+        flash('Error deleting direction.', 'error')
+    
     return redirect(url_for('main.index'))
 
 @bp.route('/edit_direction/<int:id>', methods=['GET', 'POST'])
