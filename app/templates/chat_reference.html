@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h1>Enter New Reference</h1>
+            
+            <!-- Reset Button -->
+            <form action="{{ url_for('main.reset_reference_conversation') }}" method="post" class="mb-3">
+                <button type="submit" class="btn btn-warning">Reset Conversation</button>
+            </form>
+            
+            <!-- Conversation History -->
+            <div class="chat-history mb-4">
+                {% if not conversation_history %}
+                    <div class="message assistant-message mb-2 p-3">
+                        <strong>AI Counselor:</strong>
+                        <p class="mb-0">Hi! I'd love to hear about someone you look up to. Who inspires you and why?</p>
+                    </div>
+                {% endif %}
+                
+                {% for message in conversation_history %}
+                    <div class="message {% if message.role == 'user' %}user-message{% else %}assistant-message{% endif %} mb-2 p-3">
+                        <strong>{% if message.role == 'user' %}You{% else %}AI Counselor{% endif %}:</strong>
+                        <p class="mb-0">{{ message.content }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Reference Confirmation Modal -->
+            {% if is_complete %}
+            <div class="modal fade" id="confirmReferenceModal" tabindex="-1" aria-labelledby="confirmReferenceModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="confirmReferenceModalLabel">Save Reference</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Here's a summary of your reference:</p>
+                            <div class="card">
+                                <div class="card-body">
+                                    <p class="card-text">{{ reference_summary }}</p>
+                                </div>
+                            </div>
+                            <p class="mt-3">Would you like to save this reference or continue the conversation?</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Continue Chat</button>
+                            <form action="{{ url_for('main.confirm_reference') }}" method="post">
+                                <input type="hidden" name="summary" value="{{ reference_summary }}">
+                                <input type="hidden" name="raw_response" value="{{ raw_response }}">
+                                <button type="submit" class="btn btn-primary">Save Reference</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Chat Form -->
+            <form method="post" id="chat-form">
+                {{ form.hidden_tag() }}
+                <div class="form-group">
+                    {{ form.message(class="form-control", rows=3, placeholder="Tell me about someone who inspires you...") }}
+                    {% for error in form.message.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                <div class="form-group mt-3">
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.chat-history {
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+}
+.message {
+    border-radius: 5px;
+    margin: 10px 0;
+}
+.user-message {
+    background-color: #e3f2fd;
+}
+.assistant-message {
+    background-color: #f5f5f5;
+}
+</style>
+
+{% if is_complete %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var modal = new bootstrap.Modal(document.getElementById('confirmReferenceModal'));
+    modal.show();
+});
+</script>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatHistory = document.querySelector('.chat-history');
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+    
+    const form = document.getElementById('chat-form');
+    const textarea = form.querySelector('textarea');
+    
+    // Enable sending with Enter (Shift+Enter for new line)
+    textarea.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            form.submit();
+        }
+    });
+});
+</script>
+{% endblock %}

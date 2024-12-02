@@ -1,45 +1,108 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12 mb-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <h1>Learn, fail and grow, never give up.</h1>
-            {% if current_user.is_authenticated %}
-            <a href="{{ url_for('main.create_direction') }}" class="btn btn-primary">Enter New Growth Direction</a>
-            {% endif %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1>Learn, fail and grow, never give up.</h1>
+                {% if current_user.is_authenticated %}
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('main.create_direction') }}" class="btn btn-primary">New Growth Direction</a>
+                    <a href="{{ url_for('main.create_reference') }}" class="btn btn-success">New Reference</a>
+                </div>
+                {% endif %}
+            </div>
         </div>
     </div>
-</div>
 
-<div class="row">
-    <div class="col-md-12">
-        {% if not current_user.is_authenticated %}
-        <div class="alert alert-info">
-            Please <a href="{{ url_for('auth.login') }}">log in</a> or <a href="{{ url_for('auth.register') }}">register</a> to create and view your directions.
-        </div>
-        {% elif directions %}
-        <div class="list-group">
-            {% for direction in directions %}
-            <div class="list-group-item list-group-item-action">
-                <div class="d-flex w-100 justify-content-between">
-                    <h5 class="mb-1">{{ direction.title }}</h5>
-                    <small class="text-muted">{{ direction.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+    {% if current_user.is_authenticated %}
+    <div class="row">
+        <!-- Growth Directions -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="h4 mb-0">Your Growth Directions</h2>
                 </div>
-                <p class="mb-1">{{ direction.description[:200] }}{% if direction.description|length > 200 %}...{% endif %}</p>
-                <div class="d-flex justify-content-between align-items-center mt-2">
-                    <small class="text-muted">Created by you</small>
-                    <a href="{{ url_for('main.direction', id=direction.id) }}" class="btn btn-info btn-sm">View Details</a>
+                <div class="card-body">
+                    {% if current_user.directions.count() > 0 %}
+                        <div class="list-group">
+                            {% for direction in current_user.directions %}
+                            <a href="{{ url_for('main.direction', id=direction.id) }}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">{{ direction.title }}</h5>
+                                    <small class="text-muted">{{ direction.timestamp.strftime('%Y-%m-%d') }}</small>
+                                </div>
+                                <p class="mb-1">{{ direction.description[:100] }}...</p>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No growth directions yet. Click "New Growth Direction" to start your journey!</p>
+                    {% endif %}
                 </div>
             </div>
-            {% endfor %}
         </div>
-        {% else %}
-        <div class="alert alert-info">
-            You haven't created any directions yet.
-            <a href="{{ url_for('main.create_direction') }}">Create your first direction!</a>
+
+        <!-- References -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="h4 mb-0">Your References</h2>
+                </div>
+                <div class="card-body">
+                    {% if current_user.references.count() > 0 %}
+                        <div class="list-group">
+                            {% for reference in current_user.references %}
+                            <a href="{{ url_for('main.reference', id=reference.id) }}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">{{ reference.title }}</h5>
+                                    <small class="text-muted">{{ reference.timestamp.strftime('%Y-%m-%d') }}</small>
+                                </div>
+                                <p class="mb-1">{{ reference.description[:100] }}...</p>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No references yet. Click "New Reference" to add someone who inspires you!</p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-        {% endif %}
     </div>
+    {% else %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="jumbotron">
+                <h2>Welcome to Growth Direction Counseling!</h2>
+                <p class="lead">This is a place where you can explore your personal growth journey and keep track of people who inspire you.</p>
+                <hr class="my-4">
+                <p>Please log in to start your journey.</p>
+                <a class="btn btn-primary btn-lg" href="{{ url_for('auth.login') }}" role="button">Login</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
+
+<style>
+.list-group-item {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.list-group-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card {
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+</style>
 {% endblock %}

@@ -3,14 +3,15 @@ from flask_login import login_required, current_user
 from werkzeug.urls import url_parse
 from app import db
 from app.main import bp
-from app.models import Direction
+from app.models import Direction, Reference
 from app.main.forms import DirectionForm, ChatMessageForm
-from app.services.chat_service import ChatService
+from app.services.chat_service import create_chat_service
 import logging
 import json
 
 logger = logging.getLogger('counsel_windsurf.main.routes')
-chat_service = ChatService()
+growth_chat_service = create_chat_service("growth")  # Initialize the growth direction chat service
+reference_chat_service = create_chat_service("idols")  # Initialize the reference chat service
 
 @bp.route('/')
 @bp.route('/index')
@@ -41,7 +42,7 @@ def create_direction():
             messages.append({"role": "user", "content": user_message})
             
             # Get AI response
-            response, is_complete, full_response, short_summary = chat_service.chat(user_message, messages)
+            response, is_complete, full_response, short_summary = growth_chat_service.chat(user_message, messages)
             
             # Add AI response to history
             messages.append({"role": "assistant", "content": response})
@@ -195,3 +196,141 @@ def reset_conversation():
     session.pop('conversation_history', None)
     flash('Conversation has been reset. You can start a new direction.')
     return redirect(url_for('main.create_direction'))
+
+@bp.route('/create_reference', methods=['GET', 'POST'])
+@login_required
+def create_reference():
+    logger.debug("Accessing create reference page")
+    form = ChatMessageForm()
+    
+    # Get conversation history
+    conversation_history = session.get('reference_conversation_history', '[]')
+    # If it's already a list, convert it to string
+    if isinstance(conversation_history, list):
+        conversation_history = json.dumps(conversation_history)
+    
+    if form.validate_on_submit():
+        try:
+            user_message = form.message.data
+            # Parse the conversation history
+            messages = json.loads(conversation_history)
+            
+            # Add user message to history
+            messages.append({"role": "user", "content": user_message})
+            
+            # Get AI response using the reference chat service
+            response, is_complete, full_response, short_summary = reference_chat_service.chat(user_message, messages)
+            
+            # Add AI response to history
+            messages.append({"role": "assistant", "content": response})
+            session['reference_conversation_history'] = json.dumps(messages)
+            
+            if is_complete:
+                # Store the reference data in session for confirmation
+                session['pending_reference'] = {
+                    'summary': response,
+                    'raw_response': full_response,
+                    'short_summary': short_summary
+                }
+                return render_template('chat_reference.html',
+                                    title='New Reference',
+                                    form=form,
+                                    conversation_history=messages,
+                                    is_complete=True,
+                                    reference_summary=response,
+                                    raw_response=full_response,
+                                    short_summary=short_summary)
+            
+            # Continue conversation
+            return redirect(url_for('main.create_reference'))
+            
+        except Exception as e:
+            logger.error(f"Error processing chat message: {str(e)}", exc_info=True)
+            flash('Error processing chat message. Please try again.', 'error')
+            return redirect(url_for('main.create_reference'))
+    
+    # Load conversation history for template
+    try:
+        messages = json.loads(conversation_history)
+        # Check if there's a pending reference to confirm
+        pending = session.get('pending_reference')
+        if pending:
+            return render_template('chat_reference.html',
+                                title='New Reference',
+                                form=form,
+                                conversation_history=messages,
+                                is_complete=True,
+                                reference_summary=pending['summary'],
+                                raw_response=pending['raw_response'],
+                                short_summary=pending['short_summary'])
+    except (json.JSONDecodeError, TypeError):
+        logger.error("Invalid conversation history in session, resetting")
+        messages = []
+        session['reference_conversation_history'] = '[]'
+    
+    return render_template('chat_reference.html', 
+                         title='New Reference',
+                         form=form,
+                         conversation_history=messages)
+
+@bp.route('/reset_reference_conversation', methods=['POST'])
+@login_required
+def reset_reference_conversation():
+    session['reference_conversation_history'] = '[]'
+    if 'pending_reference' in session:
+        del session['pending_reference']
+    return redirect(url_for('main.create_reference'))
+
+@bp.route('/confirm_reference', methods=['POST'])
+@login_required
+def confirm_reference():
+    if 'pending_reference' not in session:
+        flash('No pending reference to save.', 'error')
+        return redirect(url_for('main.create_reference'))
+        
+    try:
+        pending = session['pending_reference']
+        reference = Reference(
+            title=pending['short_summary'],
+            description=pending['summary'],
+            raw_response=pending['raw_response'],
+            author=current_user
+        )
+        db.session.add(reference)
+        db.session.commit()
+        
+        # Clear session data
+        del session['pending_reference']
+        session['reference_conversation_history'] = '[]'
+        
+        flash('Your reference has been saved!', 'success')
+        return redirect(url_for('main.index'))
+        
+    except Exception as e:
+        logger.error(f"Error saving reference: {str(e)}", exc_info=True)
+        flash('Error saving reference. Please try again.', 'error')
+        return redirect(url_for('main.create_reference'))
+
+@bp.route('/reference/<int:id>')
+@login_required
+def reference(id):
+    reference = Reference.query.get_or_404(id)
+    return render_template('reference.html', title=reference.title, reference=reference)
+
+@bp.route('/delete_reference/<int:id>', methods=['POST'])
+@login_required
+def delete_reference(id):
+    reference = Reference.query.get_or_404(id)
+    if reference.author != current_user:
+        flash('You cannot delete this reference.', 'error')
+        return redirect(url_for('main.index'))
+    
+    try:
+        db.session.delete(reference)
+        db.session.commit()
+        flash('Reference deleted.', 'success')
+    except Exception as e:
+        logger.error(f"Error deleting reference: {str(e)}", exc_info=True)
+        flash('Error deleting reference.', 'error')
+        
+    return redirect(url_for('main.index'))

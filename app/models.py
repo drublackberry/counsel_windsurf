@@ -7,10 +7,11 @@ import json
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(64), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    username = db.Column(db.String(64), index=True, unique=True, nullable=False)
+    email = db.Column(db.String(120), index=True, unique=True, nullable=False)
     password_hash = db.Column(db.String(128))
     directions = db.relationship('Direction', backref='author', lazy='dynamic')
+    references = db.relationship('Reference', backref='author', lazy='dynamic')
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -53,6 +54,29 @@ class Direction(db.Model):
     def get_raw_response(self):
         """Retrieve the raw response from Groq"""
         return self.raw_response
+
+class Reference(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(140))
+    description = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    raw_response = db.Column(db.Text)
+    embedding = db.Column(db.Text)  # Store embedding as JSON string
+    
+    def __repr__(self):
+        return f'<Reference {self.title}>'
+    
+    def set_embedding(self, embedding_array):
+        """Store numpy array as JSON string."""
+        if embedding_array is not None:
+            self.embedding = json.dumps(embedding_array.tolist())
+    
+    def get_embedding(self):
+        """Get embedding as numpy array."""
+        if self.embedding:
+            return np.array(json.loads(self.embedding))
+        return None
 
 @login_manager.user_loader
 def load_user(id):
