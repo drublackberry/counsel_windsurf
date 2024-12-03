@@ -1,16 +1,19 @@
-# Counsel Windsurf
+# Campfire 🔥
 
-A Flask-based web application for creating, managing, and finding similar directions using LLM embeddings. The application allows users to create, edit, and search for directions while maintaining semantic similarity using Groq's language model.
+A Flask-based web application for personal growth tracking and mentoring, powered by AI. The application helps users explore growth directions and find meaningful references while maintaining semantic understanding through advanced embedding techniques.
 
 ## Features
 
-- User Authentication (Register/Login)
-- Create and manage directions
-- Edit existing directions
-- View direction details including raw LLM responses
-- Find semantically similar directions using embeddings
-- Responsive UI with Bootstrap
-- Secure user data handling
+- 👤 User Authentication (Register/Login)
+- 📈 Create and manage growth directions
+- 📚 Store and manage references
+- 💬 Interactive AI conversations for growth exploration
+- 🔍 Find semantically similar content using embeddings
+- 📊 View conversation history and AI responses
+- 🎯 Track personal growth journey
+- 🏥 Monitor external service health
+- 🔒 Secure user data handling
+- 📱 Responsive UI with Bootstrap
 
 ## Tech Stack
 
@@ -19,18 +22,20 @@ A Flask-based web application for creating, managing, and finding similar direct
 - **Authentication**: Flask-Login 0.5.0
 - **Forms**: Flask-WTF 1.0.1
 - **Database Migrations**: Flask-Migrate 3.1.0
-- **LLM Integration**: Groq API
-- **Frontend**: Bootstrap, HTML, JavaScript
+- **AI Integration**: 
+  - Groq API (Mixtral-8x7b) for conversations
+  - HuggingFace Sentence Transformers for embeddings
+- **Frontend**: Bootstrap 5, HTML, JavaScript
 - **Vector Operations**: NumPy 1.24.3
 
 ## Project Structure
 
 ```
-counsel_windsurf/
+campfire/
 ├── app/                    # Application package
 │   ├── main/              # Main blueprint (routes, forms)
 │   ├── templates/         # HTML templates
-│   ├── services/          # Service layer (embedding service)
+│   ├── services/          # Service layer (chat, embedding services)
 │   └── models.py          # Database models
 ├── migrations/            # Database migrations
 ├── config.py             # Configuration settings
@@ -44,7 +49,7 @@ counsel_windsurf/
 1. Clone the repository:
 ```bash
 git clone [repository-url]
-cd counsel_windsurf
+cd campfire
 ```
 
 2. Create and activate a virtual environment:
@@ -62,7 +67,9 @@ pip install -r requirements.txt
 Create a `.env` file in the root directory with:
 ```
 FLASK_APP=run.py
+FLASK_ENV=development
 GROQ_API_KEY=your_groq_api_key
+HUGGINGFACE_API_KEY=your_huggingface_api_key
 SECRET_KEY=your_secret_key
 ```
 
@@ -83,33 +90,51 @@ flask run
 
 ## Usage
 
-1. **Register/Login**: Create an account or log in to an existing one
-2. **Create Direction**: Click "Create New Direction" and fill in the title and description
-3. **View Directions**: Browse all directions on the home page
-4. **Edit Direction**: Click "Edit Direction" on any direction you own
-5. **Find Similar**: View semantically similar directions for any direction
-6. **Delete Direction**: Remove directions you've created
+1. **Register/Login**: Create an account or log in
+2. **Growth Directions**: 
+   - Create new growth directions through AI conversations
+   - View and manage your growth journey
+   - Find similar directions for inspiration
+3. **References**:
+   - Store important references and learnings
+   - Connect references to your growth directions
+   - Find related references through semantic search
+4. **Health Monitoring**:
+   - Check service status at `/health`
+   - Monitor Groq and HuggingFace API connectivity
+   - View detailed health metrics with visual indicators
 
 ## Development
 
 - Database migrations: `flask db migrate -m "Description"`
 - Apply migrations: `flask db upgrade`
+- Health check: Visit `/health` endpoint
 - Update embeddings: `python update_embeddings.py`
 
 ## Environment Variables
 
 - `FLASK_APP`: Application entry point
-- `GROQ_API_KEY`: API key for Groq LLM service
-- `SECRET_KEY`: Flask secret key for session security
+- `FLASK_ENV`: Development environment
+- `GROQ_API_KEY`: API key for Groq's Mixtral-8x7b model
+- `HUGGINGFACE_API_KEY`: API key for HuggingFace's services
+- `SECRET_KEY`: Flask application secret key
 
-## Contributing
+## Service Health Monitoring
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+The application includes a comprehensive health monitoring system:
 
-## License
+- **Endpoint**: `/health`
+- **Features**:
+  - Real-time status of all external services
+  - Visual health indicators with emojis
+  - Detailed error messages
+  - Automatic startup health check
+  - Refresh capability for latest status
 
-[Your chosen license]
+## Recent Updates
+
+- 🆕 Added HuggingFace embedding service integration
+- 🆕 Implemented semantic similarity search
+- 🆕 Added comprehensive health monitoring system
+- 🆕 Enhanced logging with emoji indicators
+- 🆕 Improved error handling and recovery
