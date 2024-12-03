@@ -7,6 +7,7 @@ from app.models import Direction, Reference
 from app.main.forms import DirectionForm, ChatMessageForm
 from app.services.chat_service import create_chat_service
 from app.services.embedding_service import create_embedding_service
+from app.services.profile_service import create_profile_service
 import logging
 import json
 
@@ -14,6 +15,7 @@ logger = logging.getLogger('counsel_windsurf.main.routes')
 growth_chat_service = create_chat_service("growth")  # Initialize the growth direction chat service
 reference_chat_service = create_chat_service("idols")  # Initialize the reference chat service
 embedding_service = create_embedding_service()  # Initialize the embedding service
+profile_service = create_profile_service()
 
 @bp.route('/')
 @bp.route('/index')
@@ -131,7 +133,14 @@ def confirm_direction():
         # Clear conversation history and pending direction
         session.pop('conversation_history', None)
         session.pop('pending_direction', None)
-            
+        
+        # Check if we need to update the user's profile
+        if profile_service.should_update_profile(current_user):
+            try:
+                profile_service.generate_profile(current_user)
+            except Exception as e:
+                logger.warning(f"Could not generate profile: {str(e)}")
+        
         flash('Your growth direction has been recorded!')
         return redirect(url_for('main.index'))
         
@@ -309,13 +318,13 @@ def reset_reference_conversation():
 @login_required
 def confirm_reference():
     if 'pending_reference' not in session:
-        flash('No pending reference to save.', 'error')
+        flash('No pending reference to confirm.')
         return redirect(url_for('main.create_reference'))
         
     try:
         pending = session['pending_reference']
         reference = Reference(
-            title=pending['short_summary'],
+            title=pending.get('short_summary', 'Reference'),
             description=pending['summary'],
             raw_response=pending['raw_response'],
             author=current_user
@@ -329,13 +338,22 @@ def confirm_reference():
             logger.info("Successfully generated and stored embedding for reference")
         else:
             logger.warning("Failed to generate embedding for reference")
-            
+        
+        logger.info(f"Creating confirmed reference with title: {reference.title}")
         db.session.add(reference)
         db.session.commit()
+        logger.info(f"Reference saved to database with id: {reference.id}")
         
-        # Clear session data
+        # Clear the session data
         del session['pending_reference']
         session['reference_conversation_history'] = '[]'
+        
+        # Check if we need to update the user's profile
+        if profile_service.should_update_profile(current_user):
+            try:
+                profile_service.generate_profile(current_user)
+            except Exception as e:
+                logger.warning(f"Could not generate profile: {str(e)}")
         
         flash('Your reference has been saved!', 'success')
         return redirect(url_for('main.index'))
@@ -414,6 +432,18 @@ def health_check():
     logger.info(f"🧠 HuggingFace Service: {'✅' if status['huggingface']['healthy'] else '❌'}")
     
     return render_template('health.html', status=status)
+
+@bp.route('/profile')
+@login_required
+def profile():
+    """View user profile and growth summary."""
+    # Get or generate profile if needed
+    if profile_service.should_update_profile(current_user):
+        profile = profile_service.generate_profile(current_user)
+    else:
+        profile = profile_service.get_latest_profile(current_user)
+    
+    return render_template('profile.html', profile=profile)
 
 # Perform health check on startup
 @bp.before_app_first_request

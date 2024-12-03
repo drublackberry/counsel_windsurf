@@ -12,6 +12,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(128))
     directions = db.relationship('Direction', backref='author', lazy='dynamic')
     references = db.relationship('Reference', backref='author', lazy='dynamic')
+    profiles = db.relationship('UserProfile', backref='author', lazy='dynamic', order_by='UserProfile.timestamp.desc()')
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -77,6 +78,16 @@ class Reference(db.Model):
         if self.embedding:
             return np.array(json.loads(self.embedding))
         return None
+
+class UserProfile(db.Model):
+    """Stores AI-generated user profiles based on their directions and references."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<UserProfile {self.author.username} - {self.timestamp}>'
 
 @login_manager.user_loader
 def load_user(id):

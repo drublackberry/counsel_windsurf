@@ -179,12 +179,29 @@ class IdolsChatService(BaseChatService):
         return "[IDOLCOMP]"
 
 
+class ProfileChatService(BaseChatService):
+    """Chat service for generating user profiles based on their growth journey."""
+    
+    @property
+    def system_prompt(self) -> str:
+        return """You are a growth counselor creating insightful user profiles based on their growth journey.
+        Your goal is to analyze the user's growth directions and references to create a meaningful profile.
+        Focus on identifying patterns, themes, and motivations in their journey.
+        Create a concise but meaningful profile that captures their growth aspirations and interests.
+        When you have generated the profile, start your response with '[PROFCOMP]'."""
+    
+    @property
+    def completion_token(self) -> str:
+        return "[PROFCOMP]"
+
+
 # Factory function to create chat services
 def create_chat_service(chat_type: str) -> BaseChatService:
     """Create a chat service instance based on the specified type."""
     services = {
         "growth": GrowthDirectionChatService,
         "idols": IdolsChatService,
+        "profile": ProfileChatService,
     }
     
     service_class = services.get(chat_type)

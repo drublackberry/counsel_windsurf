@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-circle"></i> Your Growth Profile
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if profile %}
+                        <div class="profile-content">
+                            {{ profile.description | safe | nl2br }}
+                        </div>
+                        <div class="text-muted mt-3">
+                            <small>Last updated: {{ profile.timestamp.strftime('%Y-%m-%d %H:%M UTC') }}</small>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Start adding growth directions and references to generate your profile!
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <a href="{{ url_for('main.index') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
