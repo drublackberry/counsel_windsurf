@@ -6,12 +6,14 @@ from app.main import bp
 from app.models import Direction, Reference
 from app.main.forms import DirectionForm, ChatMessageForm
 from app.services.chat_service import create_chat_service
+from app.services.embedding_service import create_embedding_service
 import logging
 import json
 
 logger = logging.getLogger('counsel_windsurf.main.routes')
 growth_chat_service = create_chat_service("growth")  # Initialize the growth direction chat service
 reference_chat_service = create_chat_service("idols")  # Initialize the reference chat service
+embedding_service = create_embedding_service()  # Initialize the embedding service
 
 @bp.route('/')
 @bp.route('/index')
@@ -103,26 +105,42 @@ def confirm_direction():
         flash('No pending direction to confirm.')
         return redirect(url_for('main.create_direction'))
     
-    pending = session['pending_direction']
-    direction = Direction(
-        title=pending.get('short_summary', 'Growth Direction'),
-        description=pending['summary'],
-        raw_response=pending['raw_response'],
-        author=current_user
-    )
+    try:
+        pending = session['pending_direction']
+        direction = Direction(
+            title=pending.get('short_summary', 'Growth Direction'),
+            description=pending['summary'],
+            raw_response=pending['raw_response'],
+            author=current_user
+        )
         
-    logger.info(f"Creating confirmed direction with title: {direction.title}")
-    db.session.add(direction)
-    db.session.commit()
-    logger.info(f"Direction saved to database with id: {direction.id}")
+        # Generate and store embedding
+        logger.info(f"Generating embedding for direction: {direction.title}")
+        embedding = embedding_service.create_embedding(direction.description)
+        if embedding is not None:
+            direction.set_embedding(embedding)
+            logger.info("Successfully generated and stored embedding for direction")
+        else:
+            logger.warning("Failed to generate embedding for direction")
+            
+        logger.info(f"Creating confirmed direction with title: {direction.title}")
+        db.session.add(direction)
+        db.session.commit()
+        logger.info(f"Direction saved to database with id: {direction.id}")
+            
+        # Clear conversation history and pending direction
+        session.pop('conversation_history', None)
+        session.pop('pending_direction', None)
+            
+        flash('Your growth direction has been recorded!')
+        return redirect(url_for('main.index'))
         
-    # Clear conversation history and pending direction
-    session.pop('conversation_history', None)
-    session.pop('pending_direction', None)
-        
-    flash('Your growth direction has been recorded!')
-    return redirect(url_for('main.index'))
-        
+    except Exception as e:
+        logger.error(f"Error saving direction: {str(e)}", exc_info=True)
+        db.session.rollback()
+        flash('Error saving direction. Please try again.', 'error')
+        return redirect(url_for('main.create_direction'))
+
 @bp.route('/direction/<int:id>')
 @login_required
 def direction(id):
@@ -302,6 +320,16 @@ def confirm_reference():
             raw_response=pending['raw_response'],
             author=current_user
         )
+        
+        # Generate and store embedding
+        logger.info(f"Generating embedding for reference: {reference.title}")
+        embedding = embedding_service.create_embedding(reference.description)
+        if embedding is not None:
+            reference.set_embedding(embedding)
+            logger.info("Successfully generated and stored embedding for reference")
+        else:
+            logger.warning("Failed to generate embedding for reference")
+            
         db.session.add(reference)
         db.session.commit()
         
@@ -314,6 +342,7 @@ def confirm_reference():
         
     except Exception as e:
         logger.error(f"Error saving reference: {str(e)}", exc_info=True)
+        db.session.rollback()
         flash('Error saving reference. Please try again.', 'error')
         return redirect(url_for('main.create_reference'))
 

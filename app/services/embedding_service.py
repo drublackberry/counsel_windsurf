@@ -4,74 +4,54 @@ import numpy as np
 import json
 import logging
 
+__all__ = ['EmbeddingService', 'create_embedding_service']
+
 logger = logging.getLogger('counsel_windsurf.embedding_service')
 
 class EmbeddingService:
     def __init__(self, api_key=None):
-        self.api_key = api_key or os.getenv('GROQ_API_KEY')
+        self.api_key = api_key or os.getenv('HUGGINGFACE_API_KEY')
         if not self.api_key:
-            logger.error("GROQ_API_KEY not found in environment variables")
-            raise ValueError("GROQ_API_KEY must be set in environment variables")
-        logger.info("Initializing Groq API configuration")
+            logger.error("HUGGINGFACE_API_KEY not found in environment variables")
+            raise ValueError("HUGGINGFACE_API_KEY must be set in environment variables")
+        logger.info("Initializing HuggingFace API configuration")
         
-        self.base_url = "https://api.groq.com/openai/v1/chat/completions"
-        self.model = "mixtral-8x7b-32768"  # Using Mixtral model
+        self.api_url = "https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2"
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
         
     def create_embedding(self, text):
-        """Create an embedding for the given text using Groq API."""
+        """Create an embedding for the given text using HuggingFace's sentence-transformers API."""
         try:
             logger.debug(f"Creating embedding for text: {text[:100]}...")
             
-            # Prepare the message for embedding generation
-            messages = [
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": text}
-            ]
-            
-            # Make request to Groq API
+            # Make request to HuggingFace API
             response = httpx.post(
-                self.base_url,
+                self.api_url,
                 headers=self.headers,
-                json={
-                    "model": self.model,
-                    "messages": messages
-                }
+                json={"inputs": text, "options": {"wait_for_model": True}}
             )
                 
             if response.status_code == 200:
-                response_data = response.json()
-                    
-                # Extract the assistant's response
-                assistant_message = response_data['choices'][0]['message']['content']
-                    
-                # Convert the response to a numpy array (simple approach)
-                # Using the hash of the response as a basic numerical representation
-                embedding = np.array([hash(word) for word in assistant_message.split()])
-                    
+                # HuggingFace returns the embedding directly as a list of floats
+                embedding = np.array(response.json())
                 logger.info("Successfully created embedding")
-                return embedding, response_data
+                return embedding
             else:
-                logger.error(f"Error from Groq API: {response.text}")
-                return None, None
+                logger.error(f"Error from HuggingFace API: {response.text}")
+                return None
                     
         except Exception as e:
             logger.error(f"Error creating embedding: {str(e)}")
-            return None, None
+            return None
 
     def compute_similarity(self, embedding1, embedding2):
         """Compute cosine similarity between two embeddings."""
         try:
             if embedding1 is None or embedding2 is None:
                 return 0.0
-                
-            # Ensure both embeddings have the same length
-            min_length = min(len(embedding1), len(embedding2))
-            embedding1 = embedding1[:min_length]
-            embedding2 = embedding2[:min_length]
             
             # Compute cosine similarity
             dot_product = np.dot(embedding1, embedding2)
@@ -87,3 +67,22 @@ class EmbeddingService:
         except Exception as e:
             logger.error(f"Error computing similarity: {str(e)}")
             return 0.0
+
+    def health_check(self):
+        """Check if the HuggingFace API is accessible and responding."""
+        try:
+            # Try to create a simple embedding as a health check
+            test_embedding = self.create_embedding("health check")
+            if test_embedding is not None:
+                logger.info(" HuggingFace API health check passed")
+                return True, "HuggingFace API is healthy"
+            else:
+                logger.error(" HuggingFace API health check failed - no embedding returned")
+                return False, "HuggingFace API failed to generate embedding"
+        except Exception as e:
+            logger.error(f" HuggingFace API health check failed with error: {str(e)}")
+            return False, f"HuggingFace API error: {str(e)}"
+
+def create_embedding_service():
+    """Create and return an instance of EmbeddingService."""
+    return EmbeddingService()
