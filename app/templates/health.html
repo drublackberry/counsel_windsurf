@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">🏥 Service Health Status</h1>
+    
+    <!-- Overall Status -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h2 class="card-title">
+                {% if status.overall %}
+                <span class="text-success">🌟 All Systems Operational</span>
+                {% else %}
+                <span class="text-danger">⚠️ System Issues Detected</span>
+                {% endif %}
+            </h2>
+        </div>
+    </div>
+    
+    <!-- Individual Services -->
+    <div class="row">
+        <!-- Growth Direction Service -->
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        🤖 Growth Direction Service
+                        {% if status.groq_growth.healthy %}
+                        <span class="text-success">✅</span>
+                        {% else %}
+                        <span class="text-danger">❌</span>
+                        {% endif %}
+                    </h5>
+                    <p class="card-text">{{ status.groq_growth.message }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Reference Service -->
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        📚 Reference Service
+                        {% if status.groq_reference.healthy %}
+                        <span class="text-success">✅</span>
+                        {% else %}
+                        <span class="text-danger">❌</span>
+                        {% endif %}
+                    </h5>
+                    <p class="card-text">{{ status.groq_reference.message }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- HuggingFace Service -->
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        🧠 HuggingFace Service
+                        {% if status.huggingface.healthy %}
+                        <span class="text-success">✅</span>
+                        {% else %}
+                        <span class="text-danger">❌</span>
+                        {% endif %}
+                    </h5>
+                    <p class="card-text">{{ status.huggingface.message }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Refresh Button -->
+    <div class="text-center mt-4">
+        <a href="{{ url_for('main.health_check') }}" class="btn btn-primary">
+            🔄 Refresh Status
+        </a>
+    </div>
+</div>
+{% endblock %}

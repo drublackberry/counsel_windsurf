@@ -369,3 +369,61 @@ def delete_reference(id):
         flash('Error deleting reference.', 'error')
         
     return redirect(url_for('main.index'))
+
+@bp.route('/health')
+def health_check():
+    """Check the health of all external services."""
+    status = {
+        'groq_growth': {'healthy': False, 'message': ''},
+        'groq_reference': {'healthy': False, 'message': ''},
+        'huggingface': {'healthy': False, 'message': ''},
+        'overall': False
+    }
+    
+    # Check Groq API (Growth Direction Service)
+    logger.info("🔍 Checking Growth Direction Service...")
+    growth_healthy, growth_msg = growth_chat_service.health_check()
+    status['groq_growth'] = {'healthy': growth_healthy, 'message': growth_msg}
+    
+    # Check Groq API (Reference Service)
+    logger.info("🔍 Checking Reference Service...")
+    reference_healthy, reference_msg = reference_chat_service.health_check()
+    status['groq_reference'] = {'healthy': reference_healthy, 'message': reference_msg}
+    
+    # Check HuggingFace API
+    logger.info("🔍 Checking HuggingFace Service...")
+    hf_healthy, hf_msg = embedding_service.health_check()
+    status['huggingface'] = {'healthy': hf_healthy, 'message': hf_msg}
+    
+    # Overall health is good only if all services are healthy
+    status['overall'] = all([
+        status['groq_growth']['healthy'],
+        status['groq_reference']['healthy'],
+        status['huggingface']['healthy']
+    ])
+    
+    # Log overall health status with emoji
+    if status['overall']:
+        logger.info("🌟 All services are healthy and running!")
+    else:
+        logger.error("❌ Some services are unhealthy!")
+        
+    # Log individual service status
+    logger.info(f"🤖 Growth Direction Service: {'✅' if status['groq_growth']['healthy'] else '❌'}")
+    logger.info(f"📚 Reference Service: {'✅' if status['groq_reference']['healthy'] else '❌'}")
+    logger.info(f"🧠 HuggingFace Service: {'✅' if status['huggingface']['healthy'] else '❌'}")
+    
+    return render_template('health.html', status=status)
+
+# Perform health check on startup
+@bp.before_app_first_request
+def startup_health_check():
+    """Run health check when the application starts."""
+    logger.info("🚀 Starting Campfire application...")
+    logger.info("🏥 Running initial health check...")
+    
+    try:
+        health_check()
+        logger.info("✨ Initial health check completed")
+    except Exception as e:
+        logger.error(f"💥 Error during startup health check: {str(e)}")

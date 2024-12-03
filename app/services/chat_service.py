@@ -131,6 +131,21 @@ class BaseChatService(ABC):
             logger.error(f"Unexpected error in chat: {str(e)}", exc_info=True)
             return f"I apologize, but I encountered an unexpected error: {str(e)}. Please try again.", False, "", ""
 
+    def health_check(self):
+        """Check if the Groq API is accessible and responding."""
+        try:
+            # Try a simple chat completion as a health check
+            response = self.chat("health check", [])
+            if response and isinstance(response, tuple) and len(response) > 0:
+                logger.info(" Groq API health check passed")
+                return True, "Groq API is healthy"
+            else:
+                logger.error(" Groq API health check failed - invalid response")
+                return False, "Groq API returned invalid response"
+        except Exception as e:
+            logger.error(f" Groq API health check failed with error: {str(e)}")
+            return False, f"Groq API error: {str(e)}"
+
 
 class GrowthDirectionChatService(BaseChatService):
     """Chat service specifically for exploring growth directions."""

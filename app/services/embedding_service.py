@@ -74,10 +74,10 @@ class EmbeddingService:
             # Try to create a simple embedding as a health check
             test_embedding = self.create_embedding("health check")
             if test_embedding is not None:
-                logger.info(" HuggingFace API health check passed")
+                logger.info("")
                 return True, "HuggingFace API is healthy"
             else:
-                logger.error(" HuggingFace API health check failed - no embedding returned")
+                logger.error("")
                 return False, "HuggingFace API failed to generate embedding"
         except Exception as e:
             logger.error(f" HuggingFace API health check failed with error: {str(e)}")
