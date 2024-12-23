@@ -184,11 +184,12 @@ class ProfileChatService(BaseChatService):
     
     @property
     def system_prompt(self) -> str:
-        return """You are a growth counselor creating insightful user profiles based on their growth journey.
+        return f"""You are a growth counselor creating insightful user profiles based on their growth journey.
         Your goal is to analyze the user's growth directions and references to create a meaningful profile.
         Focus on identifying patterns, themes, and motivations in their journey.
-        Create a concise but meaningful profile that captures their growth aspirations and interests.
-        When you have generated the profile, start your response with '[PROFCOMP]'."""
+        STRICT INSTRUCTION: The '{self.completion_token}' token must ONLY be used when you have DEFINITIVELY and COMPREHENSIVELY 
+        synthesized the user's profile. This is NOT a preliminary marker or an acknowledgment, 
+        but the ABSOLUTE signal that you have completed a thorough, nuanced profile analysis."""
     
     @property
     def completion_token(self) -> str:
