@@ -4,7 +4,15 @@
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-8 offset-md-2">
-            <div class="card">
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-info">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            {% endwith %}
+            
+            <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
                     <h4 class="mb-0">
                         <i class="fas fa-user-circle"></i> Your Growth Profile
@@ -13,7 +21,7 @@
                 <div class="card-body">
                     {% if profile %}
                         <div class="profile-content">
-                            {{ profile.description | safe | nl2br }}
+                            {{ profile.description | nl2br | safe }}
                         </div>
                         <div class="text-muted mt-3">
                             <small>Last updated: {{ profile.timestamp.strftime('%Y-%m-%d %H:%M UTC') }}</small>
@@ -23,6 +31,43 @@
                             <i class="fas fa-info-circle"></i> Start adding growth directions and references to generate your profile!
                         </div>
                     {% endif %}
+                    
+                    <div class="mt-4">
+                        <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#passwordChangeForm" aria-expanded="false" aria-controls="passwordChangeForm">
+                            <i class="fas fa-key"></i> Change Password
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="collapse" id="passwordChangeForm">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-key"></i> Change Password
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" action="">
+                            {{ form.hidden_tag() }}
+                            <div class="mb-3">
+                                {{ form.current_password.label(class="form-label") }}
+                                {{ form.current_password(class="form-control", type="password") }}
+                            </div>
+                            <div class="mb-3">
+                                {{ form.new_password.label(class="form-label") }}
+                                {{ form.new_password(class="form-control", type="password") }}
+                            </div>
+                            <div class="mb-3">
+                                {{ form.confirm_password.label(class="form-label") }}
+                                {{ form.confirm_password(class="form-control", type="password") }}
+                            </div>
+                            {{ form.submit(class="btn btn-primary") }}
+                            <button type="button" class="btn btn-outline-secondary ms-2" data-bs-toggle="collapse" data-bs-target="#passwordChangeForm">
+                                Cancel
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
             

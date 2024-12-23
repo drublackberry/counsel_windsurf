@@ -15,3 +15,9 @@ class EditDirectionForm(FlaskForm):
 class ChatMessageForm(FlaskForm):
     message = TextAreaField('How do you want to grow?', validators=[DataRequired()])
     submit = SubmitField('Send')
+
+class PasswordChangeForm(FlaskForm):
+    current_password = StringField('Current Password', validators=[DataRequired()])
+    new_password = StringField('New Password', validators=[DataRequired(), Length(min=6)])
+    confirm_password = StringField('Confirm New Password', validators=[DataRequired()])
+    submit = SubmitField('Change Password')

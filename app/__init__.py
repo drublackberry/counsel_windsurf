@@ -64,6 +64,15 @@ def create_app(config_class=Config):
     logger = setup_logging(app)
     logger.info('Creating application instance')
 
+    # Add custom Jinja2 filters
+    def nl2br(value):
+        if not value:
+            return value
+        return value.replace('\n', '<br>')
+    
+    app.jinja_env.filters['nl2br'] = nl2br
+    logger.debug('Custom Jinja2 filters added')
+
     db.init_app(app)
     logger.debug('Database initialized')
 

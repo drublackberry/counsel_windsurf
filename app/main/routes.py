@@ -4,7 +4,7 @@ from werkzeug.urls import url_parse
 from app import db
 from app.main import bp
 from app.models import Direction, Reference
-from app.main.forms import DirectionForm, ChatMessageForm
+from app.main.forms import DirectionForm, ChatMessageForm, PasswordChangeForm
 from app.services.chat_service import create_chat_service
 from app.services.embedding_service import create_embedding_service
 from app.services.profile_service import create_profile_service
@@ -433,17 +433,31 @@ def health_check():
     
     return render_template('health.html', status=status)
 
-@bp.route('/profile')
+@bp.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
     """View user profile and growth summary."""
+    form = PasswordChangeForm()
+    
+    if form.validate_on_submit():
+        if current_user.check_password(form.current_password.data):
+            if form.new_password.data == form.confirm_password.data:
+                current_user.set_password(form.new_password.data)
+                db.session.commit()
+                flash('Your password has been updated successfully.')
+                return redirect(url_for('main.profile'))
+            else:
+                flash('New passwords do not match.')
+        else:
+            flash('Current password is incorrect.')
+    
     # Get or generate profile if needed
     if profile_service.should_update_profile(current_user):
         profile = profile_service.generate_profile(current_user)
     else:
         profile = profile_service.get_latest_profile(current_user)
     
-    return render_template('profile.html', profile=profile)
+    return render_template('profile.html', profile=profile, form=form)
 
 # Perform health check on startup
 @bp.before_app_first_request
